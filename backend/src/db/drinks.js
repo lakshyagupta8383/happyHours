@@ -1,7 +1,5 @@
-// backend/src/db/drinks.js
-
 // 1. Load .env variables (Elastic host + API key)
-require('dotenv').config({ path: __dirname + '/../../../.env' });  // ✅ force load
+require('dotenv').config({ path: __dirname + '/../../../.env' });  // force load
 
 console.log("ES_HOST →", process.env.ES_HOST);
 console.log("API_KEY →", process.env.API_KEY);
@@ -16,8 +14,6 @@ const client = new Client({
     apiKey: process.env.API_KEY // API Key from .env
   }
 });
-
-// 4. Define your Elastic index (same as Ripun used in Python)
 const INDEX_NAME = 'recipes';
 
 
@@ -26,7 +22,7 @@ async function getAllDrinks() {
   try {
     const result = await client.search({
       index: INDEX_NAME,
-      size: , // optional: limit how many recipes you return
+      size: 10, // optional: limit how many recipes you return
       query: {
         match_all: {} // fetch everything in the index
       }
