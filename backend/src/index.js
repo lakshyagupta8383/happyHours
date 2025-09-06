@@ -11,6 +11,7 @@ app.use(express.json());                   // Allow Express to parse JSON in req
 app.use('/v1/age', require('./routes/age'));    // 🔞 Age verification API
 app.use('/v1/drinks', require('./routes/drinks'));    // 🍸 Drinks list + details
 app.use('/v1/chat', require('./routes/chat'));        // 💬 Chat + AI replies
+app.use('/v1/feedback', require('./routes/feedback')); // Feedback from users
 
 // Start the server on defined port
 app.listen(PORT, () => {
