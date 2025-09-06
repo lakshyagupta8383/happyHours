@@ -8,7 +8,7 @@ app.use(cors());                           // Enable Cross-Origin Resource Shari
 app.use(express.json());                   // Allow Express to parse JSON in requests
 
 // Mount individual route handlers (each has its own file)
-// app.use('/v1/age-check', require('./age'));    // 🔞 Age verification API
+app.use('/v1/age', require('./routes/age'));    // 🔞 Age verification API
 app.use('/v1/drinks', require('./routes/drinks'));    // 🍸 Drinks list + details
 app.use('/v1/chat', require('./routes/chat'));        // 💬 Chat + AI replies
 

@@ -1,4 +1,4 @@
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch  # type: ignore
 
 ES_HOST = "https://my-elasticsearch-project-b22493.es.us-central1.gcp.elastic.cloud:443"
 API_KEY = "TzBmT0M1a0JFRkdqeVRsc0RQTXc6UlFVVHdsckY0dDJ2Rk5zSG1TeEh0UQ=="

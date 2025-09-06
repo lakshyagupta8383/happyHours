@@ -1,17 +1,27 @@
 const express = require('express');
 const router = express.Router();
 
-// ✅ Ripun: You own this logic. Can expand country rules if needed.
-router.post('/', (req, res) => {
-  const { dob, country } = req.body;
-  const minAge = country === 'IN' ? 25 : 21;        // 🧠 You can change this logic
-  const userAge = new Date().getFullYear() - new Date(dob).getFullYear();
+const { getDrinksByAgeAndState } = require('../db/age');
 
-  res.json({
-    allowed: userAge >= minAge,
-    min_age: minAge,
-    reason: userAge >= minAge ? "Allowed" : `Legal age in ${country} is ${minAge}`
-  });
+// GET /v1/age?age=20&state=Delhi
+router.get('/', async (req, res) => {
+  const { age, state } = req.query;
+
+  if (!age || !state) {
+    return res.status(400).json({ error: 'Missing age or state in query' });
+  }
+
+  const userAge = parseInt(age, 10);
+  if (isNaN(userAge)) {
+    return res.status(400).json({ error: 'Invalid age format' });
+  }
+
+  try {
+    const drinks = await getDrinksByAgeAndState(userAge, state);
+    res.json({ items: drinks });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 module.exports = router;
