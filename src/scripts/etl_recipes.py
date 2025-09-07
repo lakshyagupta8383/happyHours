@@ -1,67 +1,66 @@
 import json
 from elasticsearch import Elasticsearch, helpers
+import os
+from dotenv import load_dotenv
 
-# Elasticsearch cloud cluster connection details
-ES_HOST = "https://my-elasticsearch-project-b22493.es.us-central1.gcp.elastic.cloud:443"  
-# This is the URL of your Elasticsearch cluster running on Elastic Cloud
+# ✅ Load .env values from project root
+env_path = os.path.join(os.path.dirname(__file__), '../../../.env')
+load_dotenv(dotenv_path=env_path)
 
-API_KEY = "TzBmT0M1a0JFRkdqeVRsc0RQTXc6UlFVVHdsckY0dDJ2Rk5zSG1TeEh0UQ=="  
-# Your authentication key for secure access to Elasticsearch
+ES_HOST = os.getenv("ES_HOST")
+API_KEY = os.getenv("API_KEY")
+INDEX_NAME = "recipes"
+DATA_FILE = os.path.join(os.path.dirname(__file__), "recipes_core.json")  # Update if different location
 
-INDEX_NAME = "recipes"  
-# The name of the index (like a database table) where documents (recipes) will be stored
+# ✅ Connect to Elasticsearch
+es = Elasticsearch(
+    ES_HOST,
+    api_key=API_KEY,
+    verify_certs=True
+)
 
-DATA_FILE = "recipes_core.json"  
-# Path to the cleaned JSON file containing recipe data
-
-
-# Create an Elasticsearch client instance using host and API key
-es = Elasticsearch(ES_HOST, api_key=API_KEY, verify_certs=True)
-
-
-# Function to clean up each recipe record before indexing
+# 🧹 Clean tags, ingredients, and steps
 def clean_record(rec):
-    # Clean tags: remove spaces, lowercase, and ignore empty values
+    # Clean and lowercase tags
     rec["tags"] = [t.strip().lower() for t in rec.get("tags", []) if t]
 
-    # Clean ingredients: for each ingredient dictionary
+    # Clean ingredients list
     rec["ingredients"] = [
-        {k: (v.strip() if isinstance(v, str) else v)  # strip spaces if it's a string
-         for k, v in ing.items() if v}               # keep only non-empty values
-        for ing in rec.get("ingredients", [])        # loop through ingredient list
+        {k: (v.strip() if isinstance(v, str) else v) for k, v in ing.items() if v}
+        for ing in rec.get("ingredients", [])
     ]
 
-    # Clean steps: for each step dictionary
+    # Clean preparation steps
     rec["steps"] = [
-        {k: (v.strip() if isinstance(v, str) else v) 
-         for k, v in step.items() if v}              
-        for step in rec.get("steps", [])             
+        {k: (v.strip() if isinstance(v, str) else v) for k, v in step.items() if v}
+        for step in rec.get("steps", [])
     ]
 
-    return rec  # Return the cleaned recipe record
+    return rec
 
-
-# Function to load recipe data into Elasticsearch
+# 📦 Load and bulk upload data
 def load_data():
-    # Open the JSON file and read recipe data
     with open(DATA_FILE, "r", encoding="utf-8") as f:
-        recipes = json.load(f)  # recipes is now a Python list of dictionaries
+        recipes = json.load(f)
 
-    actions = []  # List to hold bulk indexing actions
+    actions = []
 
-    # Loop through each recipe record
     for rec in recipes:
-        doc = clean_record(rec)  # Clean the record before indexing
+        doc = clean_record(rec)
 
-        # Create an action dictionary for Elasticsearch bulk API
+        # ✅ Skip documents that don't have essential fields
+        if not doc.get("id") or not doc.get("name"):
+            continue
+
         actions.append({
-            "_index": INDEX_NAME,   # Index where data will be stored
-            "_id": doc["id"],       # Unique ID for each recipe document
-            "_source": doc          # The actual recipe data (content)
+            "_index": INDEX_NAME,
+            "_id": doc["id"],
+            "_source": doc
         })
 
-    # Bulk insert all recipes into Elasticsearch
+    # 🔁 Bulk insert
     helpers.bulk(es, actions)
+    print(f"✅ Indexed {len(actions)} recipes into '{INDEX_NAME}'")
 
-    # Print confirmation message
-    print(f"Indexed {len(actions)} recipes into '{INDEX_NAME}'.")
+if __name__ == "__main__":
+    load_data()
